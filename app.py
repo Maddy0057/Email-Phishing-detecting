@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory
 import joblib
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.')
 
 # Load models and vectorizer
 nb_model = joblib.load('phishing_email_model.pkl')
@@ -31,7 +31,10 @@ def predict():
         return jsonify(result)
 
     except Exception as e:
-        return jsonify({'error': 'An error occurred during prediction'}), 500
+        return jsonify({'error': 'An error occurred during prediction', 'details': str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=False)  # Disable debug mode in production
+# Required for Vercel serverless function
+def handler(request, context):
+    from werkzeug.wrappers import Request
+    req = Request(request.environ)
+    return app(req.environ, context)
